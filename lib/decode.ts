@@ -67,14 +67,19 @@ const AUTHORITY_TYPES = new Set([
 ]);
 
 async function rpcCall(method: string, params: unknown[]): Promise<any> {
-  const res = await fetch(RPC, {
+  // Calls go through our own /api/tx route: the public Solana RPC
+  // rejects direct browser requests with HTTP 403.
+  const res = await fetch("/api/tx", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    body: JSON.stringify({ signature: params[0] }),
   });
   if (!res.ok) throw new Error(`RPC HTTP ${res.status}`);
   const json = await res.json();
-  if (json.error) throw new Error(json.error.message || "RPC error");
+  if (json.error)
+    throw new Error(
+      typeof json.error === "string" ? json.error : json.error.message || "RPC error"
+    );
   return json.result;
 }
 
